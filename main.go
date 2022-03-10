@@ -38,11 +38,15 @@ func main() {
 	cA, cB := correctTheta(INIT_VEL, relative.X, relative.Y)
 
 	aorA, aorB := angOfReach(INIT_VEL, distance) 
-
 	aorA += math.Atan(relative.Y / relative.X) * (180/math.Pi)
+	aorB += math.Atan(relative.Y / relative.X) * (180/math.Pi)
 	
+	rA, rB := recursiveTheta(INIT_VEL, false, 0, 45, relative.X, relative.Y),
+				recursiveTheta(INIT_VEL, true, 45, 90, relative.X, relative.Y)
+
 	fmt.Println("Correct Shallow and Steep angles:",cA,",",cB)
 	fmt.Println("Angle of reach Shallow, Steep :",aorA,",",aorB)
+	fmt.Println("Recursive Shallow, Steep :",rA,",",rB)
 
 	cTA, cTB := timeOfFlight(INIT_VEL, cA, relative.Y), timeOfFlight(INIT_VEL, cB, relative.Y)
 	fmt.Println("Correct time of flight (Seconds):", cTA,",",cTB)
