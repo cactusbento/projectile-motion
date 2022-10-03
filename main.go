@@ -89,7 +89,7 @@ func loop() {
 
 func main() {
 	title := "Projectile Motion Calculator" 
-	width, height := 800, 400
+	width, height := 800, 315
 	wnd := g.NewMasterWindow(title, width, height, g.MasterWindowFlagsNotResizable)
 	wnd.Run(loop) 
 }
