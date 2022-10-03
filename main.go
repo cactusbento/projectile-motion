@@ -3,8 +3,26 @@ package main
 import (
 	"fmt"
 	"math"
-	"os"
-	"strconv"
+
+	// "math"
+	// "os"
+	// "strconv"
+
+	g "github.com/AllenDang/giu"
+)
+
+var (
+	vel		float32 
+	dist	float32
+	h		float32
+
+	thetaA	float64  
+	thetaB	float64  
+	maxH	float32
+
+	timeA	float64
+	timeB	float64
+
 )
 
 type coord struct {
@@ -16,39 +34,62 @@ func (c coord) print(name string) {
 	fmt.Print(name, ": (" , c.X , ", " , c.Y , ")\n" )
 }
 
+
+func loop() {
+	var (
+		lineA	[]float64 
+		lineB	[]float64 
+	)
+
+	thetaA, thetaB = correctTheta(float64(vel), float64(dist), float64(h))
+	maxH = float32(maxHeight(float64(vel), thetaB) * 1.1)
+
+	timeA = timeOfFlight(float64(vel), thetaA, float64(h))
+	timeB = timeOfFlight(float64(vel), thetaB, float64(h))
+
+	for x := 0.0; x < float64(dist); x += 0.1 {
+		lineA = append(lineA, vDispToX(float64(vel), x, thetaA))
+		lineB = append(lineB, vDispToX(float64(vel), x, thetaB))
+	}
+
+
+	g.SingleWindow().Layout(
+		g.Layout{
+			g.Row(
+				g.Column( 
+					g.Label("Inputs"), 
+					g.InputFloat(&vel).
+						Size(float32(75)).
+						Label("Velocity"), 
+					g.InputFloat(&dist).
+						Size(float32(75)).
+						Label("Distance"), 
+					g.InputFloat(&h).
+						Size(float32(75)).
+						Label("Height"),
+					g.Label("Direct:"),
+					g.Row( g.Column( g.Label("Angle"), g.Labelf("%.2f", thetaA) ),
+						   g.Column( g.Label("Time"),  g.Labelf("%.2f", timeA)) ),
+					g.Label("Loft:"),
+					g.Row( g.Column( g.Label("Angle"), g.Labelf("%.2f", thetaB) ),
+						   g.Column( g.Label("Time"),  g.Labelf("%.2f", timeB)) ),
+				),
+				g.Plot("Visual").AxisLimits(0, float64(dist * 1.05), 
+				math.Min( float64(0 - maxH * 0.05), float64( h - maxH * 0.05 ) ),
+					float64(maxH), g.ConditionAlways).Plots(
+					g.PlotLine("Direct", lineA).XScale(0.1),
+					g.PlotLine("Loft", lineB).XScale(0.1),
+				),
+			),
+		},
+	)
+
+
+}
+
 func main() {
-	if len(os.Args) < 4 {
-		panic("3 arguments required: Velocity, Distance, Height")
-	}
-
-	var numbers []float64
-
-	for _,arg := range os.Args[1:] {
-		if n, err := strconv.ParseFloat(arg, 64); err == nil {
-			numbers = append(numbers, n)
-		}
-	}
-
-
-	relative := coord{ numbers[1], numbers[2] }
-	var INIT_VEL float64 = numbers[0]
-
-	var distance float64 = math.Sqrt( math.Pow(relative.X,2) + math.Pow(relative.Y,2) )
-
-	cA, cB := correctTheta(INIT_VEL, relative.X, relative.Y)
-
-	aorA, aorB := angOfReach(INIT_VEL, distance) 
-	aorA += math.Atan(relative.Y / relative.X) * (180/math.Pi)
-	aorB += math.Atan(relative.Y / relative.X) * (180/math.Pi)
-	
-	rA, rB := recursiveTheta(INIT_VEL, false, 0, 45, relative.X, relative.Y),
-				recursiveTheta(INIT_VEL, true, 45, 90, relative.X, relative.Y)
-
-	fmt.Println("Correct Shallow and Steep angles:",cA,",",cB)
-	fmt.Println("Angle of reach Shallow, Steep :",aorA,",",aorB)
-	fmt.Println("Recursive Shallow, Steep :",rA,",",rB)
-
-	cTA, cTB := timeOfFlight(INIT_VEL, cA, relative.Y), timeOfFlight(INIT_VEL, cB, relative.Y)
-	fmt.Println("Correct time of flight (Seconds):", cTA,",",cTB)
-
+	title := "Projectile Motion Calculator" 
+	width, height := 800, 400
+	wnd := g.NewMasterWindow(title, width, height, g.MasterWindowFlagsNotResizable)
+	wnd.Run(loop) 
 }
